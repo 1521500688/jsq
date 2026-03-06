@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数值计算器 - 支持大写转换</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            font-size: 16px;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            height: 100dvh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 8px;
+            overflow: hidden;
+        }
+
+        .container {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 12px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .display {
+            background: #1a1a2e;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .display-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: #fff;
+            font-size: 1.3rem;
+            text-align: right;
+            outline: none;
+            font-family: 'SF Mono', 'Consolas', monospace;
+        }
+
+        .display-result {
+            color: #00d9ff;
+            font-size: 0.9rem;
+            text-align: right;
+            margin-top: 6px;
+            min-height: 20px;
+            word-break: break-all;
+        }
+
+        .chinese-display {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+
+        .chinese-label {
+            color: #666;
+            font-size: 0.75rem;
+            margin-bottom: 4px;
+        }
+
+        .chinese-result {
+            color: #e74c3c;
+            font-size: 1rem;
+            font-weight: bold;
+            word-break: break-all;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .btn {
+            padding: 12px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.15s ease, transform 0.1s ease;
+            font-weight: 600;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        .btn-number {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-number:active {
+            background: #d0d0d0;
+        }
+
+        .btn-operator {
+            background: #667eea;
+            color: #fff;
+        }
+
+        .btn-operator:active {
+            background: #5a6fd6;
+        }
+
+        .btn-function {
+            background: #ff6b6b;
+            color: #fff;
+        }
+
+        .btn-function:active {
+            background: #ee5a5a;
+        }
+
+        .btn-equal {
+            background: linear-gradient(135deg, #00d9ff 0%, #00b4d8 100%);
+            color: #fff;
+        }
+
+        .btn-equal:active {
+            opacity: 0.9;
+        }
+
+        .btn-zero {
+            grid-column: span 2;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 10px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            padding: 3px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 6px;
+            text-align: center;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #666;
+            user-select: none;
+        }
+
+        .tab.active {
+            background: #667eea;
+            color: #fff;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .conversion-section {
+            padding-top: 12px;
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: #667eea;
+        }
+
+        .convert-result {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .convert-result-label {
+            color: #666;
+            font-size: 0.75rem;
+            margin-bottom: 4px;
+        }
+
+        .convert-result-value {
+            color: #27ae60;
+            font-size: 1rem;
+            font-weight: bold;
+            word-break: break-all;
+        }
+
+        .info {
+            margin-top: 10px;
+            padding: 6px;
+            background: #e8f4f8;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            color: #666;
+            text-align: center;
+        }
+
+        /* 平板及以上 */
+        @media (min-width: 480px) {
+            body {
+                padding: 20px;
+            }
+
+            .container {
+                padding: 24px;
+                border-radius: 20px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+                margin-bottom: 16px;
+            }
+
+            .display {
+                padding: 16px;
+                border-radius: 15px;
+            }
+
+            .display-input {
+                font-size: 2rem;
+            }
+
+            .display-result {
+                font-size: 1.2rem;
+            }
+
+            .chinese-display {
+                padding: 12px;
+            }
+
+            .chinese-result {
+                font-size: 1.2rem;
+            }
+
+            .buttons {
+                gap: 10px;
+            }
+
+            .btn {
+                padding: 18px;
+                font-size: 1.25rem;
+                border-radius: 15px;
+            }
+
+            .btn:hover {
+                transform: scale(1.02);
+            }
+
+            .btn-number:hover {
+                background: #e0e0e0;
+            }
+
+            .btn-operator:hover {
+                background: #5a6fd6;
+            }
+
+            .btn-function:hover {
+                background: #ee5a5a;
+            }
+
+            .btn-equal:hover {
+                box-shadow: 0 4px 15px rgba(0, 217, 255, 0.3);
+            }
+
+            .tabs {
+                margin-bottom: 16px;
+                padding: 5px;
+                border-radius: 10px;
+            }
+
+            .tab {
+                padding: 10px;
+                font-size: 1rem;
+                border-radius: 8px;
+            }
+
+            .input-group input {
+                padding: 14px;
+                font-size: 1.1rem;
+            }
+
+            .convert-result {
+                padding: 14px;
+            }
+
+            .convert-result-value {
+                font-size: 1.1rem;
+            }
+
+            .info {
+                font-size: 0.85rem;
+                padding: 10px;
+            }
+        }
+
+        /* 大屏幕 */
+        @media (min-width: 768px) {
+            .container {
+                max-width: 420px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔢 数值计算器</h1>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('calculator')">计算器</div>
+            <div class="tab" onclick="switchTab('converter')">大写转换</div>
+        </div>
+
+        <!-- 计算器面板 -->
+        <div id="calculator-panel" class="tab-content active">
+            <div class="display">
+                <input type="text" class="display-input" id="display" readonly placeholder="0">
+                <div class="display-result" id="result"></div>
+            </div>
+
+            <div class="chinese-display">
+                <div class="chinese-label">大写金额：</div>
+                <div class="chinese-result" id="chinese-result"></div>
+            </div>
+
+            <div class="buttons">
+                <button class="btn btn-function" onclick="clearAll()">C</button>
+                <button class="btn btn-function" onclick="backspace()">⌫</button>
+                <button class="btn btn-operator" onclick="appendOperator('%')">%</button>
+                <button class="btn btn-operator" onclick="appendOperator('/')">÷</button>
+
+                <button class="btn btn-number" onclick="appendNumber('7')">7</button>
+                <button class="btn btn-number" onclick="appendNumber('8')">8</button>
+                <button class="btn btn-number" onclick="appendNumber('9')">9</button>
+                <button class="btn btn-operator" onclick="appendOperator('*')">×</button>
+
+                <button class="btn btn-number" onclick="appendNumber('4')">4</button>
+                <button class="btn btn-number" onclick="appendNumber('5')">5</button>
+                <button class="btn btn-number" onclick="appendNumber('6')">6</button>
+                <button class="btn btn-operator" onclick="appendOperator('-')">−</button>
+
+                <button class="btn btn-number" onclick="appendNumber('1')">1</button>
+                <button class="btn btn-number" onclick="appendNumber('2')">2</button>
+                <button class="btn btn-number" onclick="appendNumber('3')">3</button>
+                <button class="btn btn-operator" onclick="appendOperator('+')">+</button>
+
+                <button class="btn btn-number btn-zero" onclick="appendNumber('0')">0</button>
+                <button class="btn btn-number" onclick="appendNumber('.')">.</button>
+                <button class="btn btn-equal" onclick="calculate()">=</button>
+            </div>
+        </div>
+
+        <!-- 大写转换面板 -->
+        <div id="converter-panel" class="tab-content">
+            <div class="conversion-section">
+                <div class="input-group">
+                    <input type="text" id="convert-input" placeholder="输入数字（最大万亿）..." maxlength="20" oninput="realtimeConvert()">
+                </div>
+                <div class="convert-result">
+                    <div class="convert-result-label">中文大写金额：</div>
+                    <div class="convert-result-value" id="convert-result"></div>
+                </div>
+            </div>
+        </div>
+
+        <!--<div class="info">
+            💡 本计算器支持最大<b>万亿</b>级别数值运算，结果自动转换为中文大写金额。
+        </div>-->
+    </div>
+
+    <script>
+        let expression = '';
+
+        // 数字中文大写
+        const DIGITS = ['零', '壹', '贰', '叁', '肆', '伍', '陆', '柒', '捌', '玖'];
+        // 整数单位（个、拾、佰、仟）
+        const INT_UNITS = ['', '拾', '佰', '仟'];
+        // 大单位（万、亿、万亿）
+        const BIG_UNITS = ['', '万', '亿', '万亿'];
+        // 小数单位
+        const DECIMAL_UNITS = ['角', '分', '厘', '毫'];
+        // 最大值（9999999999999 = 13位数的最大值，约9.999999999999万亿）
+        const MAX_VALUE = 9999999999999;
+        // 最大整数位数（万亿是13位数字：1000000000000）
+        const MAX_INT_DIGITS = 13;
+
+        // 将数字转换为中文大写（支持到万亿）
+        function numberToChinese(numStr) {
+            if (!numStr || numStr === '') return '';
+            
+            // 处理负号
+            let isNegative = false;
+            if (numStr.startsWith('-')) {
+                isNegative = true;
+                numStr = numStr.substring(1);
+            }
+
+            // 分离整数和小数部分
+            let [intPart, decPart] = numStr.split('.');
+            
+            // 处理科学计数法
+            if (numStr.toLowerCase().includes('e')) {
+                const num = parseFloat(numStr);
+                if (Math.abs(num) > MAX_VALUE) {
+                    return '超出范围（最大万亿）';
+                }
+                numStr = num.toString();
+                [intPart, decPart] = numStr.split('.');
+            }
+
+            // 检查是否超出范围
+            const intNum = BigInt(intPart || '0');
+            if (intNum > BigInt(MAX_VALUE)) {
+                return '超出范围（最大万亿）';
+            }
+
+            let result = '';
+
+            // 转换整数部分
+            if (intPart && intPart !== '0') {
+                result = convertIntegerPart(intPart);
+            }
+
+            // 转换小数部分
+            if (decPart && decPart.length > 0) {
+                const decResult = convertDecimalPart(decPart);
+                if (result) {
+                    result += '元' + decResult;
+                } else {
+                    result = decResult;
+                }
+            } else if (result) {
+                result += '元整';
+            }
+
+            if (!result) {
+                result = '零元整';
+            }
+
+            return (isNegative ? '负' : '') + result;
+        }
+
+        // 转换整数部分
+        function convertIntegerPart(intStr) {
+            intStr = intStr.replace(/^0+/, '') || '0';
+            if (intStr === '0') return '';
+
+            let result = '';
+            const len = intStr.length;
+
+            // 每4位一组处理
+            const groups = [];
+            for (let i = len; i > 0; i -= 4) {
+                groups.unshift(intStr.slice(Math.max(0, i - 4), i));
+            }
+
+            for (let i = 0; i < groups.length; i++) {
+                const group = groups[i];
+                const groupResult = convertFourDigits(group);
+                
+                if (groupResult) {
+                    const bigUnitIndex = groups.length - 1 - i;
+                    if (bigUnitIndex < BIG_UNITS.length) {
+                        result += groupResult + BIG_UNITS[bigUnitIndex];
+                    } else {
+                        return '超出范围（最大万亿）';
+                    }
+                } else if (result && i < groups.length - 1) {
+                    const nextGroup = groups[i + 1];
+                    if (nextGroup && !nextGroup.startsWith('0')) {
+                        result += '零';
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        // 转换四位数字
+        function convertFourDigits(digits) {
+            digits = digits.padStart(4, '0');
+            let result = '';
+            let needZero = false;
+
+            for (let i = 0; i < 4; i++) {
+                const digit = parseInt(digits[i], 10);
+                
+                if (digit === 0) {
+                    needZero = true;
+                } else {
+                    if (needZero && result) {
+                        result += '零';
+                    }
+                    needZero = false;
+                    result += DIGITS[digit] + INT_UNITS[3 - i];
+                }
+            }
+
+            return result;
+        }
+
+        // 转换小数部分
+        function convertDecimalPart(decStr) {
+            let result = '';
+            
+            for (let i = 0; i < decStr.length && i < DECIMAL_UNITS.length; i++) {
+                const digit = parseInt(decStr[i], 10);
+                if (digit !== 0) {
+                    result += DIGITS[digit] + DECIMAL_UNITS[i];
+                }
+            }
+
+            return result;
+        }
+
+        // 计算表达式
+        function calculate() {
+            if (!expression) return;
+            
+            try {
+                // 预处理表达式
+                let expr = expression.replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+                
+                // 使用 Function 计算
+                const result = Function('"use strict"; return (' + expr + ')')();
+                
+                if (!isFinite(result)) {
+                    document.getElementById('result').textContent = '= Error';
+                    document.getElementById('chinese-result').textContent = '';
+                    return;
+                }
+
+                // 检查范围
+                if (Math.abs(result) > MAX_VALUE) {
+                    document.getElementById('result').textContent = '= 超出范围（最大万亿）';
+                    document.getElementById('chinese-result').textContent = '';
+                    return;
+                }
+
+                // 格式化结果
+                let displayResult = result;
+                if (Math.abs(result) >= 1e15 || (Math.abs(result) < 1e-6 && result !== 0)) {
+                    displayResult = result.toPrecision(15);
+                } else {
+                    displayResult = parseFloat(result.toPrecision(15)).toString();
+                }
+
+                // 添加千分位
+                const parts = displayResult.split('.');
+                parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                displayResult = parts.join('.');
+
+                document.getElementById('result').textContent = '= ' + displayResult;
+                
+                // 转换中文大写
+                const numStr = parseFloat(result.toPrecision(15)).toString();
+                document.getElementById('chinese-result').textContent = numberToChinese(numStr);
+                
+                expression = numStr;
+            } catch (e) {
+                document.getElementById('result').textContent = '= Error';
+                document.getElementById('chinese-result').textContent = '';
+            }
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName + '-panel').classList.add('active');
+        }
+
+        // 获取当前输入的数字（取最后一个数字）
+        function getCurrentNumber() {
+            const parts = expression.split(/[\+\-\*\/\%]/);
+            return parts[parts.length - 1];
+        }
+
+        // 检查数字是否超出位数限制
+        function isWithinLimit(numStr) {
+            const intPart = numStr.split('.')[0].replace('-', '');
+            return intPart.length <= MAX_INT_DIGITS;
+        }
+
+        function appendNumber(num) {
+            const currentNum = getCurrentNumber();
+            // 检查小数点重复
+            if (num === '.' && currentNum.includes('.')) return;
+            // 检查位数限制
+            const testNum = currentNum + num;
+            if (num !== '.' && !isWithinLimit(testNum)) return;
+            
+            expression += num;
+            document.getElementById('display').value = expression;
+        }
+
+        function appendOperator(op) {
+            if (!expression) return;
+            const lastChar = expression[expression.length - 1];
+            // 替换连续运算符
+            if (['+', '-', '*', '/', '%'].includes(lastChar)) {
+                expression = expression.slice(0, -1);
+            }
+            expression += op;
+            document.getElementById('display').value = expression;
+        }
+
+        function clearAll() {
+            expression = '';
+            document.getElementById('display').value = '';
+            document.getElementById('result').textContent = '';
+            document.getElementById('chinese-result').textContent = '';
+        }
+
+        function backspace() {
+            expression = expression.slice(0, -1);
+            document.getElementById('display').value = expression;
+        }
+
+        function realtimeConvert() {
+            const input = document.getElementById('convert-input').value.trim();
+            if (!input) {
+                document.getElementById('convert-result').textContent = '';
+                return;
+            }
+            
+            // 检查输入格式
+            if (!/^-?\d*\.?\d*$/.test(input)) {
+                document.getElementById('convert-result').textContent = '请输入有效数字';
+                return;
+            }
+            
+            // 检查整数位数
+            const intPart = input.split('.')[0].replace('-', '');
+            if (intPart.length > MAX_INT_DIGITS) {
+                document.getElementById('convert-result').textContent = '超出范围（最大万亿）';
+                return;
+            }
+            
+            const num = parseFloat(input);
+            if (isNaN(num)) {
+                document.getElementById('convert-result').textContent = '';
+                return;
+            }
+            
+            if (Math.abs(num) > MAX_VALUE) {
+                document.getElementById('convert-result').textContent = '超出范围（最大万亿）';
+                return;
+            }
+            
+            const numStr = parseFloat(num.toPrecision(15)).toString();
+            document.getElementById('convert-result').textContent = numberToChinese(numStr);
+        }
+
+        // 键盘支持
+        document.addEventListener('keydown', (e) => {
+            const key = e.key;
+            const allowedKeys = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '+', '-', '*', '/', '%', 'Enter', 'Backspace', 'Escape'];
+            
+            // 阻止字母和其他不允许的键
+            if (!allowedKeys.includes(key) && key !== 'c' && key !== 'C') {
+                e.preventDefault();
+                return;
+            }
+            
+            if (/[0-9.]/.test(key)) {
+                appendNumber(key);
+            } else if (['+', '-', '*', '/', '%'].includes(key)) {
+                appendOperator(key);
+            } else if (key === 'Enter') {
+                calculate();
+            } else if (key === 'Backspace') {
+                backspace();
+            } else if (key === 'Escape' || key === 'c' || key === 'C') {
+                clearAll();
+            }
+        });
+    </script>
+</body>
+</html>
