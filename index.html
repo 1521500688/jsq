@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>大写金额计算器</title>
+    <title>计算器</title>
     <style>
         * {
             margin: 0;
@@ -100,6 +100,16 @@
             font-weight: 300;
             line-height: 1.1;
             word-break: break-all;
+            border: none;
+            background: transparent;
+            outline: none;
+            width: 100%;
+            font-family: inherit;
+            cursor: text;
+        }
+
+        .result-display::selection {
+            background: #b3d7ff;
         }
 
         .result-display.small {
@@ -413,7 +423,7 @@
 <body>
     <div class="calculator">
         <div class="title-bar">
-            <h1>大写金额计算器</h1>
+            <h1>计算器</h1>
             <button class="history-toggle" id="historyToggle" onclick="toggleHistory()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
@@ -424,7 +434,7 @@
 
         <div class="display-area">
             <div class="expression" id="expression"></div>
-            <div class="result-display" id="display">0</div>
+            <input type="text" class="result-display" id="display" value="0" readonly>
         </div>
 
         <div class="chinese-area">
@@ -668,7 +678,7 @@
         // 调整显示字体大小
         function adjustDisplaySize() {
             const displayEl = document.getElementById('display');
-            const length = displayEl.textContent.replace(/,/g, '').length;
+            const length = displayEl.value.replace(/,/g, '').length;
 
             displayEl.classList.remove('small', 'smaller');
             if (length > 16) {
@@ -682,12 +692,37 @@
         function updateDisplay() {
             const displayEl = document.getElementById('display');
             const formatted = formatNumber(currentValue);
-            displayEl.textContent = formatted;
+            displayEl.value = formatted;
             adjustDisplaySize();
 
             // 更新中文大写 - 直接传字符串，避免精度问题
             const chineseEl = document.getElementById('chineseText');
             chineseEl.textContent = numberToChinese(currentValue);
+        }
+
+        // 处理粘贴事件
+        function handlePaste(e) {
+            e.preventDefault();
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            
+            // 清理并验证粘贴的内容
+            const cleanValue = pastedText.trim().replace(/,/g, '');
+            
+            // 验证是否为有效数字
+            if (cleanValue && /^-?\d*\.?\d*$/.test(cleanValue)) {
+                // 检查是否超出范围
+                const intPart = cleanValue.split('.')[0].replace('-', '');
+                if (intPart.length <= MAX_DIGITS) {
+                    currentValue = cleanValue;
+                    shouldResetDisplay = false;
+                    updateDisplay();
+                    showToast('已粘贴数值');
+                } else {
+                    showToast('数值超出范围');
+                }
+            } else {
+                showToast('请粘贴有效的数字');
+            }
         }
 
         // 更新表达式显示
@@ -1054,6 +1089,9 @@
         // 初始化
         renderHistory();
         updateDisplay();
+        
+        // 为显示区域添加粘贴事件监听
+        document.getElementById('display').addEventListener('paste', handlePaste);
     </script>
 </body>
 </html>
