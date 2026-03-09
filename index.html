@@ -502,6 +502,7 @@
         let operator = null;
         let shouldResetDisplay = false;
         let history = JSON.parse(localStorage.getItem('calcHistory') || '[]');
+        let inputHistory = []; // 记录用户的输入序列，用于生成完整历史表达式
 
         // 最大值：9999千万亿 (10^16)
         const MAX_VALUE = 10000000000000000; // 10^16，支持到9999千万亿
@@ -728,9 +729,14 @@
         // 更新表达式显示
         function updateExpression() {
             const exprEl = document.getElementById('expression');
-            if (previousValue && operator) {
-                const opSymbol = getOperatorSymbol(operator);
-                exprEl.textContent = `${formatNumber(previousValue)} ${opSymbol}`;
+            if (inputHistory.length > 0) {
+                const displayExpr = inputHistory.map((part, i) => {
+                    if (['+', '-', '*', '/', '%'].includes(part)) {
+                        return getOperatorSymbol(part);
+                    }
+                    return part;
+                }).join(' ');
+                exprEl.textContent = displayExpr;
             } else {
                 exprEl.textContent = '';
             }
@@ -772,15 +778,26 @@
         // 输入运算符
         function inputOperator(op) {
             if (currentValue === '') {
-                if (previousValue) {
+                if (previousValue && inputHistory.length > 0) {
+                    // 更换运算符：替换最后一个运算符
                     operator = op;
+                    inputHistory[inputHistory.length - 1] = op;
                     updateExpression();
                 }
                 return;
             }
 
+            // 记录当前数字到输入历史
+            inputHistory.push(formatNumber(currentValue));
+            
+            // 记录运算符
+            inputHistory.push(op);
+
             if (operator && !shouldResetDisplay) {
+                // 链式计算
                 calculate(true);
+                // 链式计算后，inputHistory 已被重置为 [结果]，需要追加新运算符
+                inputHistory.push(op);
             }
 
             previousValue = currentValue;
@@ -809,13 +826,20 @@
 
             if (result === null) return; // 计算出错
 
-            const expression = `${formatNumber(previousValue)} ${getOperatorSymbol(operator)} ${formatNumber(currentValue)}`;
+            // 构建当前步骤的表达式（两数计算）
+            const stepExpr = `${formatNumber(previousValue)} ${getOperatorSymbol(operator)} ${formatNumber(currentValue)}`;
 
-            if (!isChain) {
-                // 更新表达式显示
-                document.getElementById('expression').textContent = `${expression} =`;
-                // 添加到历史记录
-                addToHistory(expression, result);
+            // 更新表达式显示
+            document.getElementById('expression').textContent = `${stepExpr} =`;
+            
+            // 添加到历史记录（每次两数计算都记录）
+            addToHistory(stepExpr, result);
+
+            // 重置输入历史，只保留当前结果用于后续显示
+            if (isChain) {
+                inputHistory = [formatNumber(result)];
+            } else {
+                inputHistory = [];
             }
 
             currentValue = result;
@@ -898,14 +922,14 @@
                         result = prev - curr;
                         break;
                     case '*':
-                        result = prev * curr / multiplier;
+                        result = prev * curr / (multiplier * multiplier);
                         break;
                     case '/':
                         if (curr === 0) {
                             showToast('不能除以零');
                             return null;
                         }
-                        result = prev / curr * multiplier;
+                        result = prev / curr;
                         // 限制小数位数
                         result = Math.round(result * 1e10) / 1e10;
                         return result.toString();
@@ -955,6 +979,7 @@
             previousValue = '';
             operator = null;
             shouldResetDisplay = false;
+            inputHistory = [];
             updateDisplay();
             updateExpression();
         }
